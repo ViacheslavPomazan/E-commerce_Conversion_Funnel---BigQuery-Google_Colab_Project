@@ -69,7 +69,7 @@ Traffic wihh (data deleted/data deleted) has higher CR than others. Overall tren
 </details>
 
 <details>
-<summary>2. Creating Daily Aggregated Event Pivot Table for Funnel Analysis and Conversion Rate Calculation by Acquisition Channels</summary>
+<summary>2. Creating Daily Traffic Source Performance Pivot Table: E-commerce Conversion Funnel and Rate Analysis</summary>
 
  ```sql
 WITH init AS (
