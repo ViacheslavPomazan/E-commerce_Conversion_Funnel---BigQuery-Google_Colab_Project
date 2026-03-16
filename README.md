@@ -2,9 +2,17 @@
  
 Welcome to BigQuery and Google Colab Project!
 
+## Data Source Description 📂
+
+The data source is the BigQuery GA4 public dataset: 'bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_2021*', which provides data for January 2021. The dataset consists of 1,210,147 rows.
+
 ## Gallery and Insights 📊🔎
 
-### 1. Sessions and Purchases Distribution by Country. 
+### General
+
+Total number of sessions 116514, total number of purchase 1204, CR = 1.03%.
+
+### 1. Sessions and Purchases Distribution by Country.
 ![map](image/colab_map1.png)
 
 With over 52,000 sessions, the USA significantly outperforms all other countries. Engagement across the African continent remains minimal. Google serves as the primary traffic source for the majority of countries.
@@ -24,7 +32,18 @@ CR from session_start to add_to_cart( ~3.9%) is below the market average (5%). C
 
 Conversion rate across source (data deleted) is higher than others.
 
-## 5. Dynamic CR to purchase by Source/Medium and Trend Line.
+## 5. Dynamic Purchase CR by Source/Medium and Its Trend Line.
 ![dynamic cr](image/dynamic_cr1.png)
 
 Traffic wihh (data deleted/data deleted) has higher CR than others. Overall trend line shows slight growth by month-end.
+
+## 6. Purchase CR by Number of Landing Page Visits.
+
+
+Traffic wihh (data deleted/data deleted) has higher CR than others. Overall trend line shows slight growth by month-end.
+
+## 7. GA4 Ecommerce Event Correlation Matrix.
+
+
+1. Strong positive correlations (red zones): begin_checkout ↔ add_payment_info (0.85), add_payment_info ↔ purchase (0.84), begin_checkout ↔ purchase (0.72). 2. Correlation add_to_cart ↔ begin_checkout (0.48) is significantly lower than the conversions from point 1. 3. view_promotion and select_promotion are barely correlated with purchases (~0.14 and 0.03).
+   
