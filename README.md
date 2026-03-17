@@ -48,7 +48,7 @@ Traffic wihh (data deleted/data deleted) has higher CR than others. Overall tren
 2) Correlation add_to_cart ↔ begin_checkout (0.48) is significantly lower than the conversions from point 1.
 3) Events view_promotion and select_promotion are barely correlated with purchases (~0.14 and 0.03).
    
-## SQL Queries. 🔍
+## SQL Queries Used in This Project. ⚒️
 
 <details>
 <summary><b>Data Extraction from BigQuery and Initial Table Creation.</b></summary>
@@ -75,7 +75,7 @@ Traffic wihh (data deleted/data deleted) has higher CR than others. Overall tren
 
  ```sql
 WITH init AS (
-      SELECT date(timestamp_micros(event_timestamp)) as event_date,
+      SELECT DATE(TIMESTAMP_MICROS(event_timestamp)) as event_date,
              traffic_source.source AS source,
              traffic_source.medium AS medium,
              traffic_source.name AS campaign,
@@ -173,43 +173,52 @@ ORDER BY event_date,sourse, medium
 
 ```sql
 WITH first_table AS (
-  SELECT distinct user_pseudo_id || (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS user_session_id,
-        '/' || REGEXP_EXTRACT((SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location'),
-                  r'^https?://[^/]+/([^?#]*)') AS page_path,
-        ROW_NUMBER() OVER (PARTITION BY user_pseudo_id ||
-              (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') ) AS rn
-  FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_2021*`
-  WHERE event_name = 'session_start'
-    )
+      SELECT DISTINCT user_pseudo_id || (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS user_session_id,
+             '/' || REGEXP_EXTRACT((SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location'),
+                    r'^https?://[^/]+/([^?#]*)') AS page_path,
+              ROW_NUMBER() OVER (PARTITION BY user_pseudo_id ||
+                    (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') ) AS rn
+      FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_2021*`
+      WHERE event_name = 'session_start'
+                    )
 , init AS (
-  SELECT user_session_id, page_path
-  FROM first_table
-  WHERE rn = 1
-)
---Співвідносим сторінки session_start з покупками через user_session_id
+      SELECT user_session_id,
+             page_path
+      FROM first_table
+      WHERE rn = 1
+          )
+--relate session_start pages with purchases via user_session_id
 , purch_users AS (
-  SELECT page_path, user_session_id
-  FROM init  WHERE user_session_id in
-          (SELECT user_pseudo_id || (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id')
-            FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_2021*`
-            WHERE event_name = 'purchase')
-              )
---Рахуєм стартові сторінки
-, start_users_count as (
-      SELECT page_path, count(distinct user_session_id) as start_event
+      SELECT page_path,
+             user_session_id
+      FROM init
+      WHERE user_session_id IN (SELECT user_pseudo_id || (SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id')
+                                FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_2021*`
+                                WHERE event_name = 'purchase'
+                                )
+                 )
+--count landing pages
+, start_users_count AS (
+      SELECT page_path,
+             COUNT(DISTINCT user_session_id) AS start_event
       FROM init
       GROUP BY page_path
       )
---Рахуєм кількість покупок по сторінкам
-, purchers_users_count as (
-  SELECT page_path, count(distinct user_session_id ) as purchase_event
-  FROM purch_users
-  GROUP BY page_path
-    )
---З'єднуєм таблицю кількості page_path в session_start з таблицею кількості покупок в сесії, яка починалась з віповіного page_path .
-SELECT s.page_path, s.start_event, coalesce(p.purchase_event, 0) as purchase_event,
-          coalesce(p.purchase_event, 0) / nullif(s.start_event, 0) as cr
-FROM start_users_count s left join purchers_users_count p using(page_path)
-ORDER BY p.purchase_event desc, s.page_path
+--count the number of purchases by page
+, purchers_users_count AS (
+      SELECT page_path,
+             COUNT(DISTINCT user_session_id ) AS purchase_event
+      FROM purch_users
+      GROUP BY page_path
+                          )
+--connect the table of the number of page_paths in session_start with the table of the number of purchases in the session that started with the given page_path..
+SELECT s.page_path,
+       s.start_event,
+       COALESCE(p.purchase_event, 0) AS purchase_event,
+       COALESCE(p.purchase_event, 0) / NULLIF(s.start_event, 0) AS cr
+FROM start_users_count s
+LEFT JOIN purchers_users_count p 
+ON s.page_path = p.page_path
+ORDER BY p.purchase_event DESC, s.page_path ASC
 ```
 </details>
